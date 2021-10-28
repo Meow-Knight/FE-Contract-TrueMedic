@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { simpleStorage } from "./abi/abi";
 import Web3 from "web3";
-import Nav from "./components/Nav.js";
 import "./App.css";
 import { makeStyles } from "@material-ui/core/styles";
 import Button from "@material-ui/core/Button";
@@ -14,11 +13,6 @@ const useStyles = makeStyles((theme) => ({
    },
  },
 }));
-
-const web3 = new Web3(Web3.givenProvider);
-
-const contractAddress = "0x8ff4c1b83857A327C73F499Dfd54B23864E812D9";
-const storageContract = new web3.eth.Contract(simpleStorage, contractAddress);
 
 async function createContract(myAccount, clientAccount, privateKey, itemId) {
   const address = clientAccount;
@@ -76,16 +70,15 @@ function App() {
   const [clientAccount, setClientAccountAddress] = useState("");
   const [privateKey, setPrivateKey] = useState("");
   const [itemId, setItemId] = useState("");
-  // const [getNumber, setGet] = useState("0");
 
   const numberSet = async (t) => {
     t.preventDefault();
-    createContract(myAccount, clientAccount, privateKey, itemId);
+    await createContract(myAccount, clientAccount, privateKey, itemId);
+    alert("Sended successful");
   };
 
   return (
     <div className={classes.root}>
-      <Nav />
       <div className="main">
         <div className="card">
           <TextField
@@ -94,12 +87,14 @@ function App() {
             onChange={(t) => setMyAccountAddress(t.target.value)}
             variant="outlined"
           />
+          <br/>
           <TextField
             id="outlined-basic"
             label="Client account address:"
             onChange={(t) => setClientAccountAddress(t.target.value)}
             variant="outlined"
           />
+          <br/>
           <TextField
             id="outlined-basic"
             type="password"
@@ -107,12 +102,14 @@ function App() {
             onChange={(t) => setPrivateKey(t.target.value)}
             variant="outlined"
           />
+          <br/>
           <TextField
             id="outlined-basic"
             label="Your Item ID:"
             onChange={(t) => setItemId(t.target.value)}
             variant="outlined"
           />
+          <br/>
           <form className="form" onSubmit={numberSet}>
             <Button
               variant="contained"

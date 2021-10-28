@@ -1,18 +1,18 @@
 import React, { useState } from "react";
-import Web3 from "web3";
-import "./App.css";
-import Nav from "./components/Nav.js";
 import { simpleStorage } from "./abi/abi";
+import Web3 from "web3";
+import Nav from "./components/Nav.js";
+import "./App.css";
+import { makeStyles } from "@material-ui/core/styles";
 import Button from "@material-ui/core/Button";
 import TextField from "@material-ui/core/TextField";
-import { makeStyles } from "@material-ui/core/styles";
 
 const useStyles = makeStyles((theme) => ({
-  root: {
-    "& > *": {
-      margin: theme.spacing(1),
-    },
-  },
+ root: {
+   "& > *": {
+     margin: theme.spacing(1),
+   },
+ },
 }));
 
 const web3 = new Web3(Web3.givenProvider);
@@ -20,31 +20,69 @@ const web3 = new Web3(Web3.givenProvider);
 const contractAddress = "0x8ff4c1b83857A327C73F499Dfd54B23864E812D9";
 const storageContract = new web3.eth.Contract(simpleStorage, contractAddress);
 
+async function createContract(myAccount, clientAccount, privateKey, itemId) {
+  const address = clientAccount;
+  const abi = simpleStorage;
+
+  const infuraKey = "7c198036440346ab8eb3a8d389eef596";
+
+  // Create infuara provider
+  const provider = new Web3.providers.WebsocketProvider(
+    `wss://ropsten.infura.io/ws/v3/${infuraKey}`
+  );
+  const web3 = new Web3(provider);
+
+  // Add account from private key
+  web3.eth.accounts.wallet.create(0, myAccount);
+
+  const pk = privateKey;
+  const account = web3.eth.accounts.privateKeyToAccount(pk);
+  web3.eth.accounts.wallet.add(account);
+
+  // Setup contract
+  const contract = new web3.eth.Contract(abi, address);
+
+  async function run() {
+    const word = itemId;
+    const from = web3.eth.accounts.wallet[0].address;
+
+    const nonce = await web3.eth.getTransactionCount(from, "pending");
+    let gas = await contract.methods
+      .addWord(word)
+      .estimateGas({ from, gas: "1000", value: "1000" });
+
+    gas = Math.round(gas * 1.5);
+
+    try {
+      const result = await contract.methods.addWord(word).send({
+        gas,
+        from,
+        nonce,
+        value: "1000"
+      });
+
+      console.log("success", result);
+    } catch (e) {
+      console.log("error", e);
+    }
+  }
+
+  run();
+}
+
 function App() {
   const classes = useStyles();
-  const [number, setUint] = useState(0);
-  const [getNumber, setGet] = useState("0");
+  const [myAccount, setMyAccountAddress] = useState("");
+  const [clientAccount, setClientAccountAddress] = useState("");
+  const [privateKey, setPrivateKey] = useState("");
+  const [itemId, setItemId] = useState("");
+  // const [getNumber, setGet] = useState("0");
 
   const numberSet = async (t) => {
     t.preventDefault();
-    const accounts = await window.ethereum.enable();
-    const account = accounts[0];
-    const gas = await storageContract.methods.set(number).estimateGas();
-    
-    console.log(number);
-    console.log(gas);
-    
-    const post = await storageContract.methods.set(number).send({
-      from: account,
-      gas,
-    });
+    createContract(myAccount, clientAccount, privateKey, itemId);
   };
 
-  const numberGet = async (t) => {
-    t.preventDefault();
-    const post = await storageContract.methods.get().call();
-    setGet(post);
-  };
   return (
     <div className={classes.root}>
       <Nav />
@@ -52,8 +90,27 @@ function App() {
         <div className="card">
           <TextField
             id="outlined-basic"
-            label="Set your uint256:"
-            onChange={(t) => setUint(t.target.value)}
+            label="Your account address:"
+            onChange={(t) => setMyAccountAddress(t.target.value)}
+            variant="outlined"
+          />
+          <TextField
+            id="outlined-basic"
+            label="Client account address:"
+            onChange={(t) => setClientAccountAddress(t.target.value)}
+            variant="outlined"
+          />
+          <TextField
+            id="outlined-basic"
+            type="password"
+            label="Your private key:"
+            onChange={(t) => setPrivateKey(t.target.value)}
+            variant="outlined"
+          />
+          <TextField
+            id="outlined-basic"
+            label="Your Item ID:"
+            onChange={(t) => setItemId(t.target.value)}
             variant="outlined"
           />
           <form className="form" onSubmit={numberSet}>
@@ -65,21 +122,11 @@ function App() {
             >
               Confirm
             </Button>
-            <br />
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={numberGet}
-              type="button"
-            >
-              Get your uint256
-            </Button>
-            {getNumber}
           </form>
         </div>
       </div>
     </div>
   );
 }
- 
- export default App;
+
+export default App;

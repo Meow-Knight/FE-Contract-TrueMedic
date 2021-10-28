@@ -3,8 +3,8 @@ export const simpleStorage = [
         constant: false,
         inputs: [
             {
-            name: "x",
-            type: "uint256",
+                name: "x",
+                type: "uint256",
             },
         ],
         name: "set",
